@@ -1,0 +1,12 @@
+{
+	"name": "ee267",
+	"dependencies": {
+		"express": "^4.15.2",
+		"serialport": "^4.0.7",
+		"socket.io": "^1.7.3",
+		"ws": "^2.0.3"
+	},
+	"author": "Hayato Ikoma",
+	"license": "MIT",
+	"homepage": "https://stanford.edu/class/ee267/"
+}
