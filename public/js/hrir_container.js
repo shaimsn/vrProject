@@ -198,8 +198,68 @@ HrirContainer.prototype.evaluate = function ( az, el ) {
 		e1 = this.elevations[constrain(e_idx-1, 0, this.elevations.length-1)];
 		e2 = this.elevations[constrain(e_idx, 0, this.elevations.length-1)];
 	}
+	var L00 = zeroPad(this.data.L[ a1 ][ e1 ]);
+	var L01 = zeroPad(this.data.L[ a1 ][ e2 ]);
+	var L10 = zeroPad(this.data.L[ a2 ][ e1 ]);
+	var L11 = zeroPad(this.data.L[ a2 ][ e2 ]);
+	var R00 = zeroPad(this.data.R[ a1 ][ e1 ]);
+	var R01 = zeroPad(this.data.R[ a1 ][ e2 ]);
+	var R10 = zeroPad(this.data.R[ a2 ][ e1 ]);
+	var R11 = zeroPad(this.data.R[ a2 ][ e2 ]);
 
 	/* Perform Bilinear Interpolations for Left and Right Ears */
+	var L_weighted = bilinearInterp( L00, L01, L10, L11, a1, e1, a2, e2, az, el );
+	var R_weighted = bilinearInterp( R00, R01, R10, R11, a1, e1, a2, e2, az, el );
+
+	/* Perform Interpolation Using Minimum Phase HRIRs */
+	/*var L_w_FFT = L_weighted.slice(); // Copy
+	var L_w_FFT = cfft(L_w_FFT);
+	console.log(L00.length);*/
+
+	if (this.mode == true) {
+		/* Linear Interpolation */
+		console.log("Linear interpolation selected");
+		return { L: L_weighted, R: R_weighted };
+	} else {
+		/* Nearest Neighbor */
+		console.log("Nearest neighbor noterpolation");
+		return { L: this.data.L[ this.azimuths[a_idx] ][ this.elevations[e_idx] ],
+		       R: this.data.R[ this.azimuths[a_idx] ][ this.elevations[e_idx] ] };
+	}
+
+};
+
+/**
+ * zeroPad
+ * zero pad array to lowest power of 2
+ *
+ * @param  {Array} arrayin Array of Numbers
+ * @return {Array} Zeropadded Array of Numbers
+ */
+function zeroPad( arrayin ) {
+	var nextPowOf2 = Math.pow(2, Math.ceil(Math.log(arrayin.length)/Math.log(2)));
+	var arrayout = new Float32Array(nextPowOf2);
+	for (var i = 0; i < nextPowOf2; i++) {
+		if (i < arrayin.length) {
+			arrayout[i] = arrayin[i];
+		}
+		else {
+			arrayout[i] = 0;
+		}
+	}
+	return arrayout;
+}
+
+/**
+ * bilinearInterp
+ * bilinear interpolation amongst 4 HRIRs
+ *
+ * @param  {Arrays} Ha1e1, Ha1e2, Ha2e1, Ha2e2 -- Arrays for HRIR
+ * @param  {Numbers} a1, e1, a2, e2 -- Locations for HRIRs
+ * @param  {Numbers} az, el -- Location for Interpolation
+ * @return {Array} Array after interpolating 4 HRIRs
+ */
+function bilinearInterp( Ha1e1, Ha1e2, Ha2e1, Ha2e2, a1, e1, a2, e2, az, el ) {
 	if (a1 == a2) {
 		az_norm = 0.5;
 	}
@@ -212,47 +272,16 @@ HrirContainer.prototype.evaluate = function ( az, el ) {
 	else {
 		el_norm = (el-e1)/(e2-e1);
 	}
-	var L00 = this.data.L[ a1 ][ e1 ];
-	var L01 = this.data.L[ a1 ][ e2 ];
-	var L10 = this.data.L[ a2 ][ e1 ];
-	var L11 = this.data.L[ a2 ][ e2 ];
-	var L00_weighted = scalarMult(L00, (1-az_norm)*(1-el_norm));
-	var L01_weighted = scalarMult(L01, (1-az_norm)*el_norm);
-	var L10_weighted = scalarMult(L10, az_norm*(1-el_norm));
-	var L11_weighted = scalarMult(L11, az_norm*el_norm);
-	var L_weighted = sumArrays(L00_weighted, sumArrays(L01_weighted,
-		sumArrays(L10_weighted, L11_weighted)));
-	var R00 = this.data.R[ a1 ][ e1 ];
-	var R01 = this.data.R[ a1 ][ e2 ];
-	var R10 = this.data.R[ a2 ][ e1 ];
-	var R11 = this.data.R[ a2 ][ e2 ];
-	var R00_weighted = scalarMult(R00, (1-az_norm)*(1-el_norm));
-	var R01_weighted = scalarMult(R01, (1-az_norm)*el_norm);
-	var R10_weighted = scalarMult(R10, az_norm*(1-el_norm));
-	var R11_weighted = scalarMult(R11, az_norm*el_norm);
-	var R_weighted = sumArrays(R00_weighted, sumArrays(R01_weighted,
-		sumArrays(R10_weighted, R11_weighted)));
 
-	console.log( cfft([1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0]) );
-	return { L: [1, 0], R: [1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0] };
+	var Ha1e1_weighted = scalarMult(Ha1e1, (1-az_norm)*(1-el_norm));
+	var Ha1e2_weighted = scalarMult(Ha1e2, (1-az_norm)*el_norm);
+	var Ha2e1_weighted = scalarMult(Ha2e1, az_norm*(1-el_norm));
+	var Ha2e2_weighted = scalarMult(Ha2e2, az_norm*el_norm);
 
-	if (this.mode == true) {
-		/* Linear Interpolation */
-		console.log("Linear interpolation selected");
-		return { L: L_weighted, R: R_weighted };
-
-	} else {
-		/* Nearest Neighbor */
-		console.log("Nearest neighbor noterpolation");
-
-		//console.log("az: ", az, "el: ", el, "data: ", this.data.L[ this.azimuths[a_idx] ]);
-				//console.log(this.data.R[ az ][ el ]);
-
-		return { L: this.data.L[ this.azimuths[a_idx] ][ this.elevations[e_idx] ],
-		       R: this.data.R[ this.azimuths[a_idx] ][ this.elevations[e_idx] ] };
-	}
-
-};
+	var HRIR_weighted = sumArrays(Ha1e1_weighted, sumArrays(Ha1e2_weighted,
+		sumArrays(Ha2e1_weighted, Ha2e2_weighted)));
+	return HRIR_weighted
+}
 
 /**
  * sumArrays
@@ -284,27 +313,6 @@ function scalarMult( array, scalar ) {
 		newArray[i] = newArray[i]*scalar;
 	}
 	return newArray;
-}
-
-/**
- * constrain
- * constrain input value to be no smaller than min but no larger than max
- *
- * @param  {Number} val Value to Be Constrained
- * @param  {Number} min Minimum Value of Constraint
- * @param  {Number} max Maximum Value of Constraint
- * @return {Number} The Value Constrained Between Min and Max.
- */
-function constrain( val, min, max ) {
-	if (val > max) {
-		return max;
-	}
-	else if (val < min) {
-		return min;
-	}
-	else {
-		return val;
-	}
 }
 
 /**
