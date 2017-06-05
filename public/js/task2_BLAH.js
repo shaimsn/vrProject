@@ -135,7 +135,7 @@ function updateHRIR() {
 
 		if (i == 1) {
 			//console.log("D1: "+d+" E1: "+el1+" A1: "+az1);
-			console.log("D2: "+d+" E2: "+el+" A2: "+az);
+			//console.log("D2: "+d+" E2: "+el+" A2: "+az);
 		}
 		hrirConvolverNodes[i].update( az, el, d );
 	}

@@ -110,7 +110,7 @@ function updateHRIR() {
 		/* Rehman/Shai's Version */
 		//az = THREE.Math.RAD2DEG*Math.atan2(pos.x,-pos.z);
 		//el = THREE.Math.RAD2DEG*Math.asin(pos.y/d);
-		console.log("D: "+d+" E: "+el+" A: "+az);
+		//console.log("D: "+d+" E: "+el+" A: "+az);
 
 	} else {
 

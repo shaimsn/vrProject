@@ -35,7 +35,7 @@ var HrirContainer = function ( audioCtx ) {
 	this.data = { L: {}, R: {} };
 
 	this.mode = true;
-
+	this.flag = true;
 	/* Sampling grid for azimuths */
 	this.azimuths = [ - 80, - 65, - 55, - 45, - 40, - 35, - 30, - 25, - 20,
 		- 15, - 10, - 5, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 55, 65, 80 ];
@@ -99,6 +99,12 @@ HrirContainer.prototype._load = function () {
 		this.data.R[ az ] = this._decodeHRIR( dirname + filenameR );
 
 	}
+
+	// for (var az of this.azimuths) {
+	// 	for (var el of this.elevations) {
+	// 	console.log("data for azumuth = ", az, ", and elevation = ", el, this.data.L[az][el]);
+	// }
+	// }
 
 };
 
@@ -176,6 +182,21 @@ HrirContainer.prototype._decodeHRIR = function ( filepath ) {
  * @return {Object} hrir data (Float32Array(200)) for both ears
  */
 HrirContainer.prototype.evaluate = function ( az, el ) {
+
+  var curr_hrir = [];
+ 	if (this.flag) {
+		this.flag = false;
+		for (var azi of this.azimuths) {
+			for (var ele of this.elevations) {
+				for (var i = 0; i < 200; i++) {
+					curr_hrir += this.data.L[azi][ele][i].toString() + ",";
+			}
+			console.log("data for azumuth = ", azi, ", and elevation = ", ele, curr_hrir);
+			curr_hrir = [];
+
+			}
+		}
+	}
 
 	/* Find Point On Grid Closest to Desired Point */
 	var a_idx = binarySearch( this.azimuths, az );
