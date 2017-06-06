@@ -23,20 +23,28 @@ hrir_3d_R = zeros(num_azimuths, num_elevations, hrir_size);
 for i = 1:num_azimuths
     for j = 1: num_elevations
         hrir_3d_L(i,j,:) = hrir_2d_L((i-1)*num_elevations+j,:);
-        hrir_3d_R(i,j,:) = hrir_2d_L((i-1)*num_elevations+j,:);
+        hrir_3d_R(i,j,:) = hrir_2d_R((i-1)*num_elevations+j,:);
 
     end
 end
 
+
 %% PROCESSING ON MATLAB
-hrir_3d_L = hrir_3d_L + 7;
-hrir_3d_L = hrir_3d_L + 7;
+
+%minimum phase
+min_hrir_3d_L = hrir_3d_L; %<- to be changed to minPhaseize(hrir_3d_L)
+min_hrir_3d_R = hrir_3d_R;
+
+%linear phase
+lin_hrir_3d_L = hrir_3d_L; %<- to be changed to linearPhaseize(hrir_3d_L)
+lin_hrir_3d_R = hrir_3d_R;
 
 
 %% FROM MATLAB TO JS
 
+%minimum phase
 %converting back to 2d for export
-[rows cols] = size(hrir_2d_R);
+[rows cols] = size(hrir_2d_L);
 hrir_2d_processed_L = zeros(rows, cols);
 hrir_2d_processed_R = zeros(rows, cols);
 
@@ -50,7 +58,6 @@ for i = 1:num_azimuths
 end
 
 %exporting processed hrirs to .js to use on javascript
-writeJavascriptFile(hrir_2d_processed_L, 'lin_phase_hrirs_L.js');
-writeJavascriptFile(hrir_2d_processed_R, 'lin_phase_hrirs_R.js');
-
+writeJavascriptFile(hrir_2d_processed_L, 'lin', 'L'); 
+writeJavascriptFile(hrir_2d_processed_R, 'lin', 'R');
 

@@ -101,8 +101,23 @@ HrirContainer.prototype._load = function () {
 		this.data.R[ az ] = this._decodeHRIR( dirname + filenameR );
 	}
 
-	//Loading the mininum phase hrirs onto data.L_min and data.R_min
 
+	//Loading the mininum phase hrirs onto data.L_min and data.R_min
+	var count = 0;
+	this.data.L_min = JSON.parse(JSON.stringify(this.data.L)); //<- copying hrtf data structure to L_min
+	this.data.R_min = JSON.parse(JSON.stringify(this.data.R));
+
+	for ( var az of this.azimuths ) { // <- substituting elements of L_min with minimum phase bank created in matlab
+		for ( var el of this.elevations ) {
+			var curr_array_L = min_phase_hrirs_L.slice(count*this.dataLength, (count+1)*this.dataLength);
+			var curr_array_R = min_phase_hrirs_R.slice(count*this.dataLength, (count+1)*this.dataLength);
+			curr_array_L = Float32Array.from(curr_array_L);
+			curr_array_R = Float32Array.from(curr_array_R);
+			this.data.L_min[az][el] = curr_array_L;
+			this.data.R_min[az][el] = curr_array_R;
+			count += 1;
+		}
+	}
 
 
 	//Loading the linear phase hrirs onto data.L_min and data.R_min
@@ -249,8 +264,8 @@ HrirContainer.prototype.evaluate = function ( az, el ) {
 
 		case MIN_PHASE_INTERP:
 				console.log("Minimum phase interpolation selected");
-				var L00 = this.data.L[ a1 ][ e1 ]; var L01 = this.data.L[ a1 ][ e2 ]; var L10 = this.data.L[ a2 ][ e1 ]; var L11 = this.data.L[ a2 ][ e2 ];
-				var R00 = this.data.R[ a1 ][ e1 ]; var R01 = this.data.R[ a1 ][ e2 ]; var R10 = this.data.R[ a2 ][ e1 ]; var R11 = this.data.R[ a2 ][ e2 ];
+				var L00 = this.data.L_min[ a1 ][ e1 ]; var L01 = this.data.L_min[ a1 ][ e2 ]; var L10 = this.data.L_min[ a2 ][ e1 ]; var L11 = this.data.L_min[ a2 ][ e2 ];
+				var R00 = this.data.R_min[ a1 ][ e1 ]; var R01 = this.data.R_min[ a1 ][ e2 ]; var R10 = this.data.R_min[ a2 ][ e1 ]; var R11 = this.data.R_min[ a2 ][ e2 ];
 				var L_weighted = bilinearInterp( L00, L01, L10, L11, a1, e1, a2, e2, az, el );
 				var R_weighted = bilinearInterp( R00, R01, R10, R11, a1, e1, a2, e2, az, el );
 				return { L: L_weighted, R: R_weighted };

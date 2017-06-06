@@ -30,7 +30,8 @@ var audioCtx = new AudioContext();
 /* Make a speker which has a source node */
 var filename = 'assets/audio/drum.wav';
 var speaker = new Speaker( audioCtx, filename );
-speaker.setPosition( 0	, 0, - 10 );
+speaker.setPosition( 0	, 0	, - 10 );
+
 // speaker.setPosition( 0, 0, - 10 );
 
 
@@ -93,7 +94,6 @@ function updateHRIR() {
 	pos.applyQuaternion( invQ );
 
 	var d = pos.length();
-
 	var az, el;
 
 	/***
@@ -107,10 +107,7 @@ function updateHRIR() {
 		/* Hayato's Version */
 		az = Math.asin( pos.x / d ) * THREE.Math.RAD2DEG;
 		el = Math.atan2( pos.y, - pos.z ) * THREE.Math.RAD2DEG;
-		/* Rehman/Shai's Version */
-		//az = THREE.Math.RAD2DEG*Math.atan2(pos.x,-pos.z);
-		//el = THREE.Math.RAD2DEG*Math.asin(pos.y/d);
-		//console.log("D: "+d+" E: "+el+" A: "+az);
+
 
 	} else {
 

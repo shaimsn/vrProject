@@ -1,13 +1,13 @@
-function writeJavascriptFile(hrir_2d_processed, channel)
+function writeJavascriptFile(hrir_2d_processed, ax, channel)
  
 csvwrite('without_comma_at_end.js',hrir_2d_processed);
 
 fid1 = fopen('without_comma_at_end.js');
-fid2 = fopen(['../public/js/lin_phase_hrirs_' channel '.js'],'w');
+fid2 = fopen(['../public/js/' ax '_phase_hrirs_' channel '.js'],'w');
 tline = fgets(fid1);
 Character2add = ',';
 
-fprintf(fid2,['var lin_phase_hrirs_' channel ' = [']);
+fprintf(fid2,['var ' ax '_phase_hrirs_' channel ' = [']);
 
 while ischar(tline)
     tline(end) = ',';

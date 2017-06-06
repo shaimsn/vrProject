@@ -113,8 +113,8 @@ HrirConvolver.prototype.update = function ( az, el, d ) {
 
 	this._currentConvolver.gainNode.gain.linearRampToValueAtTime(
 		0, this._audioCtx.currentTime + transitionTime );
-
-	this.output.gain.value = 1 / ( 1 + d ^ 2 );
+		
+	this.output.gain.value = 1 / ( 1 + d*d );
 
 	var newConvolver = this._newConvolver;
 	this._newConvolver = this._currentConvolver;
