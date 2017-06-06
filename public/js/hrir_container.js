@@ -24,6 +24,11 @@
  * @param  {AudioContext} audioCtx      Web Audio API's audio context
  */
 
+ const NEAREST_NEIGHBOR = 0;
+ const BILIN_INTERP = 1;
+ const MIN_PHASE_INTERP = 2;
+ const LIN_PHASE_INTERP = 3;
+
 var HrirContainer = function ( audioCtx ) {
 
 	this._audioCtx = audioCtx;
@@ -34,7 +39,10 @@ var HrirContainer = function ( audioCtx ) {
 	 */
 	this.data = { L: {}, R: {} };
 
-	this.mode = true;
+
+
+	this.mode = NEAREST_NEIGHBOR;
+
 	this.flag = true;
 	/* Sampling grid for azimuths */
 	this.azimuths = [ - 80, - 65, - 55, - 45, - 40, - 35, - 30, - 25, - 20,
@@ -99,13 +107,6 @@ HrirContainer.prototype._load = function () {
 		this.data.R[ az ] = this._decodeHRIR( dirname + filenameR );
 
 	}
-
-	// for (var az of this.azimuths) {
-	// 	for (var el of this.elevations) {
-	// 	console.log("data for azumuth = ", az, ", and elevation = ", el, this.data.L[az][el]);
-	// }
-	// }
-
 };
 
 
@@ -183,20 +184,23 @@ HrirContainer.prototype._decodeHRIR = function ( filepath ) {
  */
 HrirContainer.prototype.evaluate = function ( az, el ) {
 
+	//Exporting hrirs to matlab by printing stuff to console
   var curr_hrir = [];
- 	if (this.flag) {
-		this.flag = false;
-		for (var azi of this.azimuths) {
-			for (var ele of this.elevations) {
-				for (var i = 0; i < 200; i++) {
-					curr_hrir += this.data.L[azi][ele][i].toString() + ",";
-			}
-			console.log("data for azumuth = ", azi, ", and elevation = ", ele, curr_hrir);
-			curr_hrir = [];
 
-			}
-		}
-	}
+	//printing hrir bank given to us on the console
+  // 	if (this.flag) {
+	// 	this.flag = false;
+	// 	for (var azi of this.azimuths) {
+	// 		for (var ele of this.elevations) {
+	// 			for (var i = 0; i < 200; i++) {
+	// 				curr_hrir += this.data.L[azi][ele][i].toString() + ",";
+	// 		}
+	// 		console.log("data for azumuth = ", azi, ", and elevation = ", ele, curr_hrir);
+	// 		curr_hrir = [];
+	//
+	// 		}
+	// 	}
+	// }
 
 	/* Find Point On Grid Closest to Desired Point */
 	var a_idx = binarySearch( this.azimuths, az );
@@ -237,16 +241,28 @@ HrirContainer.prototype.evaluate = function ( az, el ) {
 	var L_w_FFT = cfft(L_w_FFT);
 	console.log(L00.length);*/
 
-	if (this.mode == true) {
-		/* Linear Interpolation */
-		console.log("Linear interpolation selected");
-		return { L: L_weighted, R: R_weighted };
-	} else {
-		/* Nearest Neighbor */
-		console.log("Nearest neighbor noterpolation");
-		return { L: this.data.L[ this.azimuths[a_idx] ][ this.elevations[e_idx] ],
-		       R: this.data.R[ this.azimuths[a_idx] ][ this.elevations[e_idx] ] };
-	}
+	switch (this.mode) {
+		case NEAREST_NEIGHBOR:
+				console.log("Nearest neighbor noterpolation");
+				return { L: this.data.L[ this.azimuths[a_idx] ][ this.elevations[e_idx] ],
+				R: this.data.R[ this.azimuths[a_idx] ][ this.elevations[e_idx] ] };
+				break;
+
+		case BILIN_INTERP:
+				console.log("Bilinear interpolation selected");
+				return { L: L_weighted, R: R_weighted };
+				break;
+
+		case MIN_PHASE_INTERP:
+				console.log("Minimum phase interpolation selected");
+				return { L: L_weighted, R: R_weighted };
+				break;
+
+		case LIN_PHASE_INTERP:
+				console.log("Linear phase interpolation selected");
+				return { L: L_weighted, R: R_weighted };
+				break;
+		}
 
 };
 

@@ -199,11 +199,7 @@ $( "html" ).keydown( function ( e ) {
 	   case 75: /* Key k */
 
 				/* Change linear interp to no interp*/
-		if (hrirContainer.mode == false) {
-		hrirContainer.mode = true;
-	} else {
-		hrirContainer.mode = false;
-	}
+		hrirContainer.mode = (hrirContainer.mode + 1) % 4;
 
 		 break;
 
