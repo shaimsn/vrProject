@@ -37,13 +37,16 @@ var HrirContainer = function ( audioCtx ) {
 	 * You can access hrir at azimuth: -80, elevation: -40 of the left ear by
 	 * hrirContainer.L[-80][-40]
 	 */
-	this.data = { L: {}, R: {} };
+	this.data = { L: {}, R: {}, L_min: {}, R_min: {}, L_lin: {}, R_lin: {}};
 
 
+	//this.L_copy = {};
 
 	this.mode = NEAREST_NEIGHBOR;
 
 	this.flag = true;
+	this.flagy = true;
+	this.flagz = true;
 	/* Sampling grid for azimuths */
 	this.azimuths = [ - 80, - 65, - 55, - 45, - 40, - 35, - 30, - 25, - 20,
 		- 15, - 10, - 5, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 55, 65, 80 ];
@@ -72,42 +75,58 @@ var HrirContainer = function ( audioCtx ) {
 	/* Load the data to this.data */
 	this._load();
 
-	/*  */
-	// for ( var az of this.azimuths ) {
-	// 	for ( var el of this.elevations ) {
-	// 		console.log("az: ", az, "el: ", el, "data: ", this.data.L[ az ]);
-	// 		//console.log(this.data.R[ az ][ el ]);
-	// 	}
-	// }
-
 };
+
+
+
+
+
 
 
 HrirContainer.prototype._load = function () {
 
+	//Loading the regular hrirs onto data.L and data.R
 	var dirname = 'assets/hrir/';
-
 	for ( var az of this.azimuths ) {
-
 		var filenameL, filenameR;
-
 		if ( az >= 0 ) {
 
 			filenameL = az + 'azleft.wav';
 			filenameR = az + 'azright.wav';
-
 		} else {
-
 			filenameL = 'neg' + Math.abs( az ) + 'azleft.wav';
 			filenameR = 'neg' + Math.abs( az ) + 'azright.wav';
-
 		}
-
 		this.data.L[ az ] = this._decodeHRIR( dirname + filenameL );
 		this.data.R[ az ] = this._decodeHRIR( dirname + filenameR );
-
 	}
+
+	//Loading the mininum phase hrirs onto data.L_min and data.R_min
+
+
+
+	//Loading the linear phase hrirs onto data.L_min and data.R_min
+	var count = 0;
+	this.data.L_lin = JSON.parse(JSON.stringify(this.data.L));
+	this.data.R_lin = JSON.parse(JSON.stringify(this.data.R));
+
+	for ( var az of this.azimuths ) {
+		for ( var el of this.elevations ) {
+			var curr_array_L = lin_phase_hrirs_L.slice(count*this.dataLength, (count+1)*this.dataLength);
+			var curr_array_R = lin_phase_hrirs_R.slice(count*this.dataLength, (count+1)*this.dataLength);
+			curr_array_L = Float32Array.from(curr_array_L);
+			curr_array_R = Float32Array.from(curr_array_R);
+			this.data.L_lin[az][el] = curr_array_L;
+			this.data.R_lin[az][el] = curr_array_R;
+			count += 1;
+		}
+	}
+
+
 };
+
+
+
 
 
 HrirContainer.prototype._decodeHRIR = function ( filepath ) {
@@ -170,6 +189,9 @@ HrirContainer.prototype._decodeHRIR = function ( filepath ) {
 
 
 
+
+
+
 /**
  * evaluate
  * This function picks up the hrir dataset that is close to the input azimuth
@@ -184,23 +206,7 @@ HrirContainer.prototype._decodeHRIR = function ( filepath ) {
  */
 HrirContainer.prototype.evaluate = function ( az, el ) {
 
-	//Exporting hrirs to matlab by printing stuff to console
-  var curr_hrir = [];
-
-	//printing hrir bank given to us on the console
-  // 	if (this.flag) {
-	// 	this.flag = false;
-	// 	for (var azi of this.azimuths) {
-	// 		for (var ele of this.elevations) {
-	// 			for (var i = 0; i < 200; i++) {
-	// 				curr_hrir += this.data.L[azi][ele][i].toString() + ",";
-	// 		}
-	// 		console.log("data for azumuth = ", azi, ", and elevation = ", ele, curr_hrir);
-	// 		curr_hrir = [];
-	//
-	// 		}
-	// 	}
-	// }
+	//this.printHrirBank();
 
 	/* Find Point On Grid Closest to Desired Point */
 	var a_idx = binarySearch( this.azimuths, az );
@@ -223,23 +229,7 @@ HrirContainer.prototype.evaluate = function ( az, el ) {
 		e1 = this.elevations[constrain(e_idx-1, 0, this.elevations.length-1)];
 		e2 = this.elevations[constrain(e_idx, 0, this.elevations.length-1)];
 	}
-	var L00 = zeroPad(this.data.L[ a1 ][ e1 ]);
-	var L01 = zeroPad(this.data.L[ a1 ][ e2 ]);
-	var L10 = zeroPad(this.data.L[ a2 ][ e1 ]);
-	var L11 = zeroPad(this.data.L[ a2 ][ e2 ]);
-	var R00 = zeroPad(this.data.R[ a1 ][ e1 ]);
-	var R01 = zeroPad(this.data.R[ a1 ][ e2 ]);
-	var R10 = zeroPad(this.data.R[ a2 ][ e1 ]);
-	var R11 = zeroPad(this.data.R[ a2 ][ e2 ]);
 
-	/* Perform Bilinear Interpolations for Left and Right Ears */
-	var L_weighted = bilinearInterp( L00, L01, L10, L11, a1, e1, a2, e2, az, el );
-	var R_weighted = bilinearInterp( R00, R01, R10, R11, a1, e1, a2, e2, az, el );
-
-	/* Perform Interpolation Using Minimum Phase HRIRs */
-	/*var L_w_FFT = L_weighted.slice(); // Copy
-	var L_w_FFT = cfft(L_w_FFT);
-	console.log(L00.length);*/
 
 	switch (this.mode) {
 		case NEAREST_NEIGHBOR:
@@ -250,42 +240,67 @@ HrirContainer.prototype.evaluate = function ( az, el ) {
 
 		case BILIN_INTERP:
 				console.log("Bilinear interpolation selected");
+				var L00 = this.data.L[ a1 ][ e1 ]; var L01 = this.data.L[ a1 ][ e2 ]; var L10 = this.data.L[ a2 ][ e1 ]; var L11 = this.data.L[ a2 ][ e2 ];
+				var R00 = this.data.R[ a1 ][ e1 ]; var R01 = this.data.R[ a1 ][ e2 ]; var R10 = this.data.R[ a2 ][ e1 ]; var R11 = this.data.R[ a2 ][ e2 ];
+				var L_weighted = bilinearInterp( L00, L01, L10, L11, a1, e1, a2, e2, az, el );
+				var R_weighted = bilinearInterp( R00, R01, R10, R11, a1, e1, a2, e2, az, el );
 				return { L: L_weighted, R: R_weighted };
 				break;
 
 		case MIN_PHASE_INTERP:
 				console.log("Minimum phase interpolation selected");
+				var L00 = this.data.L[ a1 ][ e1 ]; var L01 = this.data.L[ a1 ][ e2 ]; var L10 = this.data.L[ a2 ][ e1 ]; var L11 = this.data.L[ a2 ][ e2 ];
+				var R00 = this.data.R[ a1 ][ e1 ]; var R01 = this.data.R[ a1 ][ e2 ]; var R10 = this.data.R[ a2 ][ e1 ]; var R11 = this.data.R[ a2 ][ e2 ];
+				var L_weighted = bilinearInterp( L00, L01, L10, L11, a1, e1, a2, e2, az, el );
+				var R_weighted = bilinearInterp( R00, R01, R10, R11, a1, e1, a2, e2, az, el );
 				return { L: L_weighted, R: R_weighted };
 				break;
 
 		case LIN_PHASE_INTERP:
 				console.log("Linear phase interpolation selected");
+				var L00 = this.data.L_lin[ a1 ][ e1 ]; var L01 = this.data.L_lin[ a1 ][ e2 ]; var L10 = this.data.L_lin[ a2 ][ e1 ]; var L11 = this.data.L_lin[ a2 ][ e2 ];
+				var R00 = this.data.R_lin[ a1 ][ e1 ]; var R01 = this.data.R_lin[ a1 ][ e2 ]; var R10 = this.data.R_lin[ a2 ][ e1 ]; var R11 = this.data.R_lin[ a2 ][ e2 ];
+				var L_weighted = bilinearInterp( L00, L01, L10, L11, a1, e1, a2, e2, az, el );
+				var R_weighted = bilinearInterp( R00, R01, R10, R11, a1, e1, a2, e2, az, el );
 				return { L: L_weighted, R: R_weighted };
 				break;
 		}
 
 };
 
+
+
+
+
+
+//HELPER FUNCTIONS
+
 /**
- * zeroPad
- * zero pad array to lowest power of 2
- *
- * @param  {Array} arrayin Array of Numbers
- * @return {Array} Zeropadded Array of Numbers
+ * printHrirBank
+ * prints hrir bank provided by CIPIC to the console. Console output is then
+ * manually saved and put in the matlab directory as either hrirs_R.txt or
+ * hrirs_L.txt for processing
  */
-function zeroPad( arrayin ) {
-	var nextPowOf2 = Math.pow(2, Math.ceil(Math.log(arrayin.length)/Math.log(2)));
-	var arrayout = new Float32Array(nextPowOf2);
-	for (var i = 0; i < nextPowOf2; i++) {
-		if (i < arrayin.length) {
-			arrayout[i] = arrayin[i];
+HrirContainer.prototype.printHrirBank = function() {
+//printing hrir bank given to us on the console
+
+	var curr_hrir = [];
+	if (this.flag) {
+	this.flag = false;
+	for (var azi of this.azimuths) {
+		for (var ele of this.elevations) {
+			for (var i = 0; i < 200; i++) {
+				curr_hrir += this.data.R[azi][ele][i].toString() + ",";
 		}
-		else {
-			arrayout[i] = 0;
+		console.log("data for azumuth = ", azi, ", and elevation = ", ele, curr_hrir);
+		curr_hrir = [];
+
 		}
 	}
-	return arrayout;
 }
+}
+
+
 
 /**
  * bilinearInterp
@@ -373,6 +388,8 @@ function constrain( val, min, max ) {
 	}
 }
 
+
+
 /**
  * binarySearch
  * perform binary search over the input array to find the closest value to the
@@ -394,6 +411,7 @@ function binarySearch( array, val ) {
 	if (array[high] < val) {
 		return high;
 	}
+
 	// Classic Binary Search
 	while (high >= low) {
 		var mid = Math.floor((high + low) / 2);
@@ -428,118 +446,4 @@ function binarySearch( array, val ) {
 		return array[idx];
 	} */
 
-}
-
-/*
-complex fast fourier transform and inverse from
-http://rosettacode.org/wiki/Fast_Fourier_transform#C.2B.2B
-*/
-function icfft(amplitudes)
-{
-	var N = amplitudes.length;
-	var iN = 1 / N;
-
-	//conjugate if imaginary part is not 0
-	for(var i = 0 ; i < N; ++i)
-		if(amplitudes[i] instanceof Complex)
-			amplitudes[i].im = -amplitudes[i].im;
-
-	//apply fourier transform
-	amplitudes = cfft(amplitudes)
-
-	for(var i = 0 ; i < N; ++i)
-	{
-		//conjugate again
-		amplitudes[i].im = -amplitudes[i].im;
-		//scale
-		amplitudes[i].re *= iN;
-		amplitudes[i].im *= iN;
-	}
-	return amplitudes;
-}
-
-function cfft(amplitudes)
-{
-	var N = amplitudes.length;
-	if( N <= 1 )
-		return amplitudes;
-
-	var hN = N / 2;
-	var even = [];
-	var odd = [];
-	even.length = hN;
-	odd.length = hN;
-	for(var i = 0; i < hN; ++i)
-	{
-		even[i] = amplitudes[i*2];
-		odd[i] = amplitudes[i*2+1];
-	}
-	even = cfft(even);
-	odd = cfft(odd);
-
-	var a = -2*Math.PI;
-	for(var k = 0; k < hN; ++k)
-	{
-		if(!(even[k] instanceof Complex))
-			even[k] = new Complex(even[k], 0);
-		if(!(odd[k] instanceof Complex))
-			odd[k] = new Complex(odd[k], 0);
-		var p = k/N;
-		var t = new Complex(0, a * p);
-		t.cexp(t).mul(odd[k], t);
-		amplitudes[k] = even[k].add(t, odd[k]);
-		amplitudes[k + hN] = even[k].sub(t, even[k]);
-	}
-	return amplitudes;
-}
-
-/*
-basic complex number arithmetic from
-http://rosettacode.org/wiki/Fast_Fourier_transform#Scala
-*/
-function Complex(re, im)
-{
-	this.re = re;
-	this.im = im || 0.0;
-}
-Complex.prototype.add = function(other, dst)
-{
-	dst.re = this.re + other.re;
-	dst.im = this.im + other.im;
-	return dst;
-}
-Complex.prototype.sub = function(other, dst)
-{
-	dst.re = this.re - other.re;
-	dst.im = this.im - other.im;
-	return dst;
-}
-Complex.prototype.mul = function(other, dst)
-{
-	//cache re in case dst === this
-	var r = this.re * other.re - this.im * other.im;
-	dst.im = this.re * other.im + this.im * other.re;
-	dst.re = r;
-	return dst;
-}
-Complex.prototype.cexp = function(dst)
-{
-	var er = Math.exp(this.re);
-	dst.re = er * Math.cos(this.im);
-	dst.im = er * Math.sin(this.im);
-	return dst;
-}
-Complex.prototype.log = function()
-{
-	/*
-	although 'It's just a matter of separating out the real and imaginary parts of jw.' is not a helpful quote
-	the actual formula I found here and the rest was just fiddling / testing and comparing with correct results.
-	http://cboard.cprogramming.com/c-programming/89116-how-implement-complex-exponential-functions-c.html#post637921
-	*/
-	if( !this.re )
-		console.log(this.im.toString()+'j');
-	else if( this.im < 0 )
-		console.log(this.re.toString()+this.im.toString()+'j');
-	else
-		console.log(this.re.toString()+'+'+this.im.toString()+'j');
 }
