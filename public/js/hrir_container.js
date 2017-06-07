@@ -5,6 +5,8 @@
  * http://interface.cipic.ucdavis.edu/sound/hrtf.html
  *
  * @author Hayato Ikoma <hikoma@stanford.edu>
+ * @author Shai Messingher <shaim@stanford.edu>
+ * @author Rehman Ali <rali8@stanford.edu>
  * @copyright The Board of Trustees of the Leland
  Stanford Junior University
  * @version 2017/03/28
@@ -134,8 +136,8 @@ HrirContainer.prototype._load = function () {
 			count += 1;
 		}
 	}
-	// console.log("L_min_delays", this.data.L_min_delays);
-	// console.log("R_min_delays", this.data.R_min_delays);
+	//console.log("L_min_delays", this.data.L_min_delays);
+	//console.log("R_min_delays", this.data.R_min_delays);
 
 
 	//Loading the linear phase hrirs onto data.L_min and data.R_min
@@ -273,8 +275,10 @@ HrirContainer.prototype.evaluate = function ( az, el ) {
 
 		case BILIN_INTERP:
 				console.log("Bilinear interpolation selected");
-				var L00 = this.data.L[ a1 ][ e1 ]; var L01 = this.data.L[ a1 ][ e2 ]; var L10 = this.data.L[ a2 ][ e1 ]; var L11 = this.data.L[ a2 ][ e2 ];
-				var R00 = this.data.R[ a1 ][ e1 ]; var R01 = this.data.R[ a1 ][ e2 ]; var R10 = this.data.R[ a2 ][ e1 ]; var R11 = this.data.R[ a2 ][ e2 ];
+				var L00 = this.data.L[ a1 ][ e1 ]; var L01 = this.data.L[ a1 ][ e2 ];
+        var L10 = this.data.L[ a2 ][ e1 ]; var L11 = this.data.L[ a2 ][ e2 ];
+				var R00 = this.data.R[ a1 ][ e1 ]; var R01 = this.data.R[ a1 ][ e2 ];
+        var R10 = this.data.R[ a2 ][ e1 ]; var R11 = this.data.R[ a2 ][ e2 ];
 				var L_weighted = bilinearInterp( L00, L01, L10, L11, a1, e1, a2, e2, az, el );
 				var R_weighted = bilinearInterp( R00, R01, R10, R11, a1, e1, a2, e2, az, el );
 				return { L: L_weighted, R: R_weighted };
@@ -282,17 +286,31 @@ HrirContainer.prototype.evaluate = function ( az, el ) {
 
 		case MIN_PHASE_INTERP:
 				console.log("Minimum phase interpolation selected");
-				var L00 = this.data.L_min[ a1 ][ e1 ]; var L01 = this.data.L_min[ a1 ][ e2 ]; var L10 = this.data.L_min[ a2 ][ e1 ]; var L11 = this.data.L_min[ a2 ][ e2 ];
-				var R00 = this.data.R_min[ a1 ][ e1 ]; var R01 = this.data.R_min[ a1 ][ e2 ]; var R10 = this.data.R_min[ a2 ][ e1 ]; var R11 = this.data.R_min[ a2 ][ e2 ];
+        /* Interpolation over Minimum Phase Filters */
+				var L00 = this.data.L_min[ a1 ][ e1 ]; var L01 = this.data.L_min[ a1 ][ e2 ];
+        var L10 = this.data.L_min[ a2 ][ e1 ]; var L11 = this.data.L_min[ a2 ][ e2 ];
+				var R00 = this.data.R_min[ a1 ][ e1 ]; var R01 = this.data.R_min[ a1 ][ e2 ];
+        var R10 = this.data.R_min[ a2 ][ e1 ]; var R11 = this.data.R_min[ a2 ][ e2 ];
 				var L_weighted = bilinearInterp( L00, L01, L10, L11, a1, e1, a2, e2, az, el );
 				var R_weighted = bilinearInterp( R00, R01, R10, R11, a1, e1, a2, e2, az, el );
+        /* Interpolation over Delays for Each Filter */
+        var tL00 = this.data.L_min_delays[ a1 ][ e1 ]; var tL01 = this.data.L_min_delays[ a1 ][ e2 ];
+        var tL10 = this.data.L_min_delays[ a2 ][ e1 ]; var tL11 = this.data.L_min_delays[ a2 ][ e2 ];
+				var tR00 = this.data.R_min_delays[ a1 ][ e1 ]; var tR01 = this.data.R_min_delays[ a1 ][ e2 ];
+        var tR10 = this.data.R_min_delays[ a2 ][ e1 ]; var tR11 = this.data.R_min_delays[ a2 ][ e2 ];
+				var L_delay = bilinearInterp( tL00, tL01, tL10, tL11, a1, e1, a2, e2, az, el );
+				var R_delay = bilinearInterp( tR00, tR01, tR10, tR11, a1, e1, a2, e2, az, el );
+        console.log("Left Ear Delay [Samples]", L_delay);
+        console.log("Right Ear Delay [Samples]", R_delay);
 				return { L: L_weighted, R: R_weighted };
 				break;
 
 		case LIN_PHASE_INTERP:
 				console.log("Linear phase interpolation selected");
-				var L00 = this.data.L_lin[ a1 ][ e1 ]; var L01 = this.data.L_lin[ a1 ][ e2 ]; var L10 = this.data.L_lin[ a2 ][ e1 ]; var L11 = this.data.L_lin[ a2 ][ e2 ];
-				var R00 = this.data.R_lin[ a1 ][ e1 ]; var R01 = this.data.R_lin[ a1 ][ e2 ]; var R10 = this.data.R_lin[ a2 ][ e1 ]; var R11 = this.data.R_lin[ a2 ][ e2 ];
+				var L00 = this.data.L_lin[ a1 ][ e1 ]; var L01 = this.data.L_lin[ a1 ][ e2 ];
+        var L10 = this.data.L_lin[ a2 ][ e1 ]; var L11 = this.data.L_lin[ a2 ][ e2 ];
+				var R00 = this.data.R_lin[ a1 ][ e1 ]; var R01 = this.data.R_lin[ a1 ][ e2 ];
+        var R10 = this.data.R_lin[ a2 ][ e1 ]; var R11 = this.data.R_lin[ a2 ][ e2 ];
 				var L_weighted = bilinearInterp( L00, L01, L10, L11, a1, e1, a2, e2, az, el );
 				var R_weighted = bilinearInterp( R00, R01, R10, R11, a1, e1, a2, e2, az, el );
 				return { L: L_weighted, R: R_weighted };

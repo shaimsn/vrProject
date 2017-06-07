@@ -77,7 +77,6 @@ for i = 1:num_azimuths
     for j = 1: num_elevations
         hrir_2d_processed_L((i-1)*num_elevations+j,:) = lin_hrir_3d_L(i,j,:);
         hrir_2d_processed_R((i-1)*num_elevations+j,:) = lin_hrir_3d_R(i,j,:);
-
     end
 end
 
