@@ -136,9 +136,6 @@ HrirContainer.prototype._load = function () {
 			count += 1;
 		}
 	}
-	//console.log("L_min_delays", this.data.L_min_delays);
-	//console.log("R_min_delays", this.data.R_min_delays);
-
 
 	//Loading the linear phase hrirs onto data.L_min and data.R_min
 	var count = 0;
@@ -302,7 +299,14 @@ HrirContainer.prototype.evaluate = function ( az, el ) {
 				var R_delay = bilinearInterp( tR00, tR01, tR10, tR11, a1, e1, a2, e2, az, el );
         console.log("Left Ear Delay [Samples]", L_delay);
         console.log("Right Ear Delay [Samples]", R_delay);
-				return { L: L_weighted, R: R_weighted };
+        /* Delay the Interpolated Minimum Phase Signals */
+        L_final = integerDelay( L_weighted, L_delay );
+        R_final = integerDelay( R_weighted, R_delay );
+        //console.log("Left Ear Min Phase", L_weighted);
+        //console.log("Left Ear Signal", L_final);
+        //console.log("Right Ear Min Phase", R_weighted);
+        //console.log("Right Ear Signal", R_final);
+				return { L: L_final, R: R_final };
 				break;
 
 		case LIN_PHASE_INTERP:
@@ -337,20 +341,39 @@ HrirContainer.prototype.printHrirBank = function() {
 
 	var curr_hrir = [];
 	if (this.flag) {
-	this.flag = false;
-	for (var azi of this.azimuths) {
-		for (var ele of this.elevations) {
-			for (var i = 0; i < 200; i++) {
-				curr_hrir += this.data.R[azi][ele][i].toString() + ",";
-		}
-		console.log("data for azumuth = ", azi, ", and elevation = ", ele, curr_hrir);
-		curr_hrir = [];
-
-		}
-	}
+  	this.flag = false;
+  	for (var azi of this.azimuths) {
+  		for (var ele of this.elevations) {
+  			for (var i = 0; i < 200; i++) {
+  				curr_hrir += this.data.R[azi][ele][i].toString() + ",";
+  		  }
+  		  console.log("data for azumuth = ", azi, ", and elevation = ", ele, curr_hrir);
+  		  curr_hrir = [];
+  		}
+  	}
+  }
 }
-}
 
+
+/**
+ * integerDelay
+ * delays signal by integer number of samples (rounds delay if float)
+ *
+ * @param  {Array} signal -- signal to delay
+ * @param  {Numbers} delay -- delay in samples (function will round for you)
+ * @return {Array} signal after delaying by integer number of samples
+ */
+function integerDelay( signal, delay ) {
+ 	var newSignal = signal.slice();
+  var delayInSamples = Math.round(delay);
+  for (var i = 0; i < delayInSamples; i++) {
+ 		newSignal[i] = 0;
+ 	}
+ 	for (var i = delayInSamples; i < newSignal.length; i++) {
+ 		newSignal[i] = signal[i-delayInSamples];
+ 	}
+ 	return newSignal;
+}
 
 
 /**

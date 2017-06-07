@@ -28,7 +28,7 @@ var AudioContext = window.AudioContext || window.webkitAudioContext;
 var audioCtx = new AudioContext();
 
 /* Make a speker which has a source node */
-var filename = 'assets/audio/drum.wav';
+var filename = 'assets/audio/bensound/idea.wav';
 var speaker = new Speaker( audioCtx, filename );
 speaker.setPosition( 0	, 0	, - 5 );
 
