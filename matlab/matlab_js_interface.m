@@ -31,14 +31,11 @@ end
 
 %% PROCESSING ON MATLAB
 
-%minimum phase
-min_hrir_3d_L = hrir_3d_L; %<- to be changed to minPhaseize(hrir_3d_L)
-min_hrir_3d_R = hrir_3d_R;
+% Minimum Phase
+[min_hrir_3d_L, t_2d_L] = minPhaseize(hrir_3d_L); %<- to be changed to minPhaseize(hrir_3d_L)
+[min_hrir_3d_R, t_2d_R] = minPhaseize(hrir_3d_R);
 
-delays_L = zeros(1,1250);
-delays_R = zeros(1,1250);
-
-%linear phase
+% Linear Phase
 lin_hrir_3d_L = linearPhaseize(hrir_3d_L); %<- to be changed to linearPhaseize(hrir_3d_L)
 lin_hrir_3d_R = linearPhaseize(hrir_3d_R);
 
@@ -48,16 +45,18 @@ lin_hrir_3d_R = linearPhaseize(hrir_3d_R);
 %%%%%%%%%%%%%%%%%%%%%%MINIMUM PHASE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %converting back to 2d for export
-[rows cols] = size(hrir_2d_L);
+[rows, cols] = size(hrir_2d_L);
 hrir_2d_processed_L = zeros(rows, cols);
 hrir_2d_processed_R = zeros(rows, cols);
-
+delays_L = zeros(1,rows);
+delays_R = zeros(1,rows);
 
 for i = 1:num_azimuths
     for j = 1: num_elevations
         hrir_2d_processed_L((i-1)*num_elevations+j,:) = min_hrir_3d_L(i,j,:);
         hrir_2d_processed_R((i-1)*num_elevations+j,:) = min_hrir_3d_R(i,j,:);
-
+        delays_L((i-1)*num_elevations+j) = t_2d_L(i,j,:);
+        delays_R((i-1)*num_elevations+j) = t_2d_R(i,j,:);
     end
 end
 
@@ -70,10 +69,9 @@ writeJavascriptFile(delays_R, 't', 'R');
 
 %%%%%%%%%%%%%%%%%%%%%%LINEAR PHASE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[rows cols] = size(hrir_2d_L);
+[rows, cols] = size(hrir_2d_L);
 hrir_2d_processed_L = zeros(rows, cols);
 hrir_2d_processed_R = zeros(rows, cols);
-
 
 for i = 1:num_azimuths
     for j = 1: num_elevations
