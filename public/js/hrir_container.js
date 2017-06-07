@@ -37,7 +37,7 @@ var HrirContainer = function ( audioCtx ) {
 	 * You can access hrir at azimuth: -80, elevation: -40 of the left ear by
 	 * hrirContainer.L[-80][-40]
 	 */
-	this.data = { L: {}, R: {}, L_min: {}, R_min: {}, L_lin: {}, R_lin: {}};
+	this.data = { L: {}, R: {}, L_min: {}, R_min: {}, L_min_delays: {}, R_min_delays: {}, L_lin: {}, R_lin: {}};
 
 
 	//this.L_copy = {};
@@ -45,8 +45,7 @@ var HrirContainer = function ( audioCtx ) {
 	this.mode = NEAREST_NEIGHBOR;
 
 	this.flag = true;
-	this.flagy = true;
-	this.flagz = true;
+
 	/* Sampling grid for azimuths */
 	this.azimuths = [ - 80, - 65, - 55, - 45, - 40, - 35, - 30, - 25, - 20,
 		- 15, - 10, - 5, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 55, 65, 80 ];
@@ -118,6 +117,25 @@ HrirContainer.prototype._load = function () {
 			count += 1;
 		}
 	}
+
+	//Loading the mininum phase hrirs TIME DELAYS onto data.L_min and data.R_min
+	var count = 0;
+	this.data.L_min_delays = JSON.parse(JSON.stringify(this.data.L)); //<- copying hrtf data structure to L_min_delays
+	this.data.R_min_delays = JSON.parse(JSON.stringify(this.data.R));
+
+	for ( var az of this.azimuths ) { // <- substituting elements of L_min_delays with minimum phase bank created in matlab
+		for ( var el of this.elevations ) {
+			var curr_array_L = t_phase_hrirs_L.slice(count*1, (count+1)*1);
+			var curr_array_R = t_phase_hrirs_R.slice(count*1, (count+1)*1);
+			curr_array_L = Float32Array.from(curr_array_L);
+			curr_array_R = Float32Array.from(curr_array_R);
+			this.data.L_min_delays[az][el] = curr_array_L;
+			this.data.R_min_delays[az][el] = curr_array_R;
+			count += 1;
+		}
+	}
+	// console.log("L_min_delays", this.data.L_min_delays);
+	// console.log("R_min_delays", this.data.R_min_delays);
 
 
 	//Loading the linear phase hrirs onto data.L_min and data.R_min

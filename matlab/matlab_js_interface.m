@@ -35,14 +35,17 @@ end
 min_hrir_3d_L = hrir_3d_L; %<- to be changed to minPhaseize(hrir_3d_L)
 min_hrir_3d_R = hrir_3d_R;
 
+delays_L = zeros(1,1250);
+delays_R = zeros(1,1250);
+
 %linear phase
-lin_hrir_3d_L = hrir_3d_L; %<- to be changed to linearPhaseize(hrir_3d_L)
-lin_hrir_3d_R = hrir_3d_R;
+lin_hrir_3d_L = linearPhaseize(hrir_3d_L); %<- to be changed to linearPhaseize(hrir_3d_L)
+lin_hrir_3d_R = linearPhaseize(hrir_3d_R);
 
 
 %% FROM MATLAB TO JS
 
-%minimum phase
+%%%%%%%%%%%%%%%%%%%%%%MINIMUM PHASE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %converting back to 2d for export
 [rows cols] = size(hrir_2d_L);
@@ -61,9 +64,11 @@ end
 %exporting processed hrirs to .js to use on javascript
 writeJavascriptFile(hrir_2d_processed_L, 'min', 'L'); 
 writeJavascriptFile(hrir_2d_processed_R, 'min', 'R');
+writeJavascriptFile(delays_L, 't', 'L'); 
+writeJavascriptFile(delays_R, 't', 'R'); 
 
 
-%linear phase
+%%%%%%%%%%%%%%%%%%%%%%LINEAR PHASE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [rows cols] = size(hrir_2d_L);
 hrir_2d_processed_L = zeros(rows, cols);
@@ -81,3 +86,4 @@ end
 %exporting processed hrirs to .js to use on javascript
 writeJavascriptFile(hrir_2d_processed_L, 'lin', 'L'); 
 writeJavascriptFile(hrir_2d_processed_R, 'lin', 'R');
+
