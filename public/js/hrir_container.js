@@ -221,9 +221,6 @@ HrirContainer.prototype._decodeHRIR = function ( filepath ) {
 
 
 
-
-
-
 /**
  * evaluate
  * This function picks up the hrir dataset that is close to the input azimuth
@@ -302,10 +299,6 @@ HrirContainer.prototype.evaluate = function ( az, el ) {
         /* Delay the Interpolated Minimum Phase Signals */
         L_final = integerDelay( L_weighted, L_delay );
         R_final = integerDelay( R_weighted, R_delay );
-        //console.log("Left Ear Min Phase", L_weighted);
-        //console.log("Left Ear Signal", L_final);
-        //console.log("Right Ear Min Phase", R_weighted);
-        //console.log("Right Ear Signal", R_final);
 				return { L: L_final, R: R_final };
 				break;
 

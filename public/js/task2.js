@@ -193,12 +193,25 @@ $( "html" ).keydown( function ( e ) {
 
 			break;
 
-	   case 75: /* Key k */
+		case 72: // Key h
 
-				/* Change linear interp to no interp*/
-		hrirContainer.mode = (hrirContainer.mode + 1) % 4;
+			hrirContainer.mode = 0; // Nearest Neighbor
+			break;
 
-		 break;
+		case 74: // Key j
+
+			hrirContainer.mode = 1; // Bilinear Interp
+			break;
+
+		case 75: // Key k
+
+			hrirContainer.mode = 2; // Min Phase Interp
+			break;
+
+		case 76: // Key l
+
+			hrirContainer.mode = 3; // Lin Phase Interp
+			break;
 
 	}
 
