@@ -32,12 +32,13 @@ end
 %% PROCESSING ON MATLAB
 
 % Minimum Phase
-[min_hrir_3d_L, t_2d_L] = minPhaseize(hrir_3d_L); %<- to be changed to minPhaseize(hrir_3d_L)
+[min_hrir_3d_L, t_2d_L] = minPhaseize(hrir_3d_L);
 [min_hrir_3d_R, t_2d_R] = minPhaseize(hrir_3d_R);
+avg_delay = round(mean([t_2d_L(:); t_2d_R(:)])); % Average Delay in Samples
 
 % Linear Phase
-lin_hrir_3d_L = linearPhaseize(hrir_3d_L); %<- to be changed to linearPhaseize(hrir_3d_L)
-lin_hrir_3d_R = linearPhaseize(hrir_3d_R);
+lin_hrir_3d_L = linearPhaseize(hrir_3d_L, avg_delay);
+lin_hrir_3d_R = linearPhaseize(hrir_3d_R, avg_delay);
 
 
 %% FROM MATLAB TO JS
